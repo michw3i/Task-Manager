@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Task Manager | Financials</title>
+    <link rel="stylesheet" href="Financials.css">
+</head>
+
+<body>
+    <!--main page-->
+    <!--horizontal navigation menu-->
+    <ul class = "navigation">
+        <li><a href = "Home.html">Home</a></li>
+        <li><a href = "Todo.html">To-do</a></li>
+        <li><a href = "Financials.html">Financials</a></li>
+    </ul>
+
+    <div id = "body">
+        <br>
+        <h1>Financials</h1>
+        <br>
+
+        <!--action to API????-->
+        <form method = "post" action = >
+            <!--enter user name-->
+            <fieldset>
+            <legend>Enter Name</legend>
+            <input type = "text" id = "name" name = "Name">
+            <br>
+            <br>
+
+            <!--Enter Button-->
+            <!--format enter button to be on side, not below-->
+            <button type = "submit" id = "submit">Enter</button>
+        </fieldset>
+        </form>
+        <br>
+        <br>
+        <!-- Combined Paying for and Financials input -->
+        <form id="financialsForm">
+            <fieldset id="financialsFieldset" style="display:none;">
+                <legend>Financial Entry</legend>
+                <label for="who">Paying for:</label>
+                <input type="text" id="who" name="who" placeholder="Enter name or group">
+                <br><br>
+                <label for="financial">Description:</label>
+                <input type="text" id="financial" name="financial" placeholder="Description (e.g. Dinner)">
+                <br><br>
+                <label for="amount">Amount Paid:</label>
+                <input type="number" id="amount" name="amount" step="0.01" min="0" placeholder="0.00">
+                <br><br>
+                <button type="submit" id="submit">Add Financials</button>
+            </fieldset>
+        </form>
+        <br>
+    
+        <div id="result"></div>
+
+        <!--user enter financials-->
+        <form id="financialsForm">
+        <!--display financials list-->
+        <ul id="financialsList">
+        </ul>
+    <div id="summary"></div>
+        <script>
+        // Show the combined Financials fieldset only after entering name
+        document.querySelector('form[action=""]').addEventListener('submit', function(event) {
+            event.preventDefault();
+            document.getElementById('financialsFieldset').style.display = '';
+        });
+
+        // Show summary after adding a financial entry
+        document.getElementById('financialsForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const who = document.getElementById('who').value.trim();
+            const desc = document.getElementById('financial').value.trim();
+            const amount = document.getElementById('amount').value.trim();
+            if (who || desc || amount) {
+                let summary = '<strong>Summary:</strong><br>';
+                if (who) summary += 'Paying for: ' + who + '<br>';
+                if (desc) summary += 'Description: ' + desc + '<br>';
+                if (amount) summary += 'Amount Paid: $' + parseFloat(amount).toFixed(2) + '<br>';
+                document.getElementById('summary').innerHTML = summary;
+            } else {
+                document.getElementById('summary').innerHTML = '';
+            }
+        });
+        </script>
+    </div>
+</body>
+
+</html>
