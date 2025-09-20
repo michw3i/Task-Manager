@@ -1,6 +1,7 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import sqlite3
+import os
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": [
@@ -25,12 +26,12 @@ def get_db():
 def add_user():
     name = request.json.get('name') # Gets the "name" value from the request's JSON data
     conn = get_db() # Connects to the database
-    c = conn.cursor() 
+    c = conn.cursor()
     # Inserts name to table, ingore if name already exists
     c.execute('INSERT OR IGNORE INTO users (name) VALUES (?)', (name,))
     conn.commit()
     # Get id of the user just added (or existing user)
-    c.execute('SELECT id FROM users WHERE name = ?', (name,)) 
+    c.execute('SELECT id FROM users WHERE name = ?', (name,))
     user_id = c.fetchone()['id']
     conn.close()
     return jsonify({'user_id': user_id})
@@ -65,7 +66,7 @@ def get_user_tasks(name):
     conn.close()
     return jsonify({'name': name, 'tasks': tasks})
 
-# Get summary of all tasks 
+# Get summary of all tasks
 # Delete a task
 @app.route('/api/task/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
@@ -88,24 +89,33 @@ def get_summary():
     conn.close()
     return jsonify({'summary': summary})
 
-# app route that serves the frontend
+# Static files serving
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+    return send_from_directory(frontend_dir, filename)
+
+# Frontend routes
 @app.route('/')
 def serve_frontend():
-    with open('../frontend/Home.html') as f:
-        return f.read()
+    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+    return send_from_directory(frontend_dir, 'Home.html')
 
 @app.route('/todo')
 def serve_todo():
-    with open('../frontend/Todo.html') as f:
-        return f.read()
+    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+    return send_from_directory(frontend_dir, 'Todo.html')
 
-@app.route(('/financials'))
+@app.route('/financials')
 def serve_financials():
-    with open('../frontend/Financials.html') as f:
-        return f.read()
+    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+    return send_from_directory(frontend_dir, 'Financials.html')
+
+@app.route('/calendar')
+def serve_calendar():
+    frontend_dir = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+    return send_from_directory(frontend_dir, 'Calendar.html')
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-    
