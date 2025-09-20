@@ -1,300 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <title>Task Manager | To-do</title>
     <link rel="stylesheet" href="Todo.css">
+    <style>
+        body {
+            text-align: center;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin: auto;
+            width: 350px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            width: 45px;
+            height: 60px;
+            vertical-align: top;
+            padding: 2px;
+            position: relative;
+        }
+
+        th {
+            background: #f4f4f4;
+        }
+
+        td.today {
+            background: #ffeb3b;
+        }
+
+        td.has-event {
+            background: #e0f7fa;
+        }
+
+        div.event {
+            font-size: 0.7em;
+            background: #b2dfdb;
+            margin: 1px 0;
+            padding: 1px 2px;
+            border-radius: 3px;
+            cursor: pointer;
+            overflow-wrap: break-word;
+        }
+
+        div.delete {
+            font-weight: bold;
+            color: red;
+            margin-left: 3px;
+            cursor: pointer;
+        }
+
+        #navButtons {
+            margin-bottom: 10px;
+        }
+
+        button {
+            margin: 0 10px;
+            padding: 5px 10px;
+        }
+    </style>
+
 </head>
 
 <body>
     <!--main page-->
     <!--horizontal navigation menu-->
-    <ul class = "navigation">
-        <li><a href = "Home.html">Home</a></li>
-        <li><a href = "Todo.html">To-do</a></li>
-        <li><a href = "Financials.html">Financials</a></li>
+    <ul class="navigation">
+        <li><a href="Home.html">Home</a></li>
+        <li><a href="Todo.html">To-do</a></li>
+        <li><a href="Financials.html">Financials</a></li>
     </ul>
 
-    <div id = "body">
+    <div id="body">
         <br>
         <h1>To-do List</h1>
         <br>
 
-        <form method = "post" action = >
-            <!--enter user name-->
-            <fieldset>
-            <legend>Enter Name</legend>
-            <input type = "text" id = "name" name = "Name">
-            <br>
-            <br>
+        <h2 id="monthYear"></h2>
+        <div id="navButtons">
+            <button id="prevMonth">&lt; Previous</button>
+            <button id="nextMonth">Next &gt;</button>
+        </div>
 
-            <!--Enter Button-->
-            <!--format enter button to be on side, not below-->
-            <button type = "submit" id = "submit">Enter</button>
-        </fieldset>
+        <table id="calendar">
+            <thead>
+                <tr>
+                    <th>Sun</th>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h3>Add Event</h3>
+        <form id="eventForm">
+            <label>Date: <input type="date" id="eventDate" required></label>
+            <label>Event: <input type="text" id="eventText" required></label>
+            <button type="submit">Add Event</button>
         </form>
-        <br>
-        <br>
-    
-        <div id="result"></div>
 
-        <!--user enter to-do-->
-        <form id="todoForm">
-            <fieldset id="todoFieldset" style="display:none;">
-                <legend>Enter To-Do</legend>
-                <input type="text" id="todo" name="todo">
-                <br>
-                <br>
+        <script>
+            // Load events from localStorage
+            let events = JSON.parse(localStorage.getItem("calendarEvents") || "{}");
 
-                <!--user enter due date-->
-                <!--format date to be on side, not below-->
-                <label for="dueDate">Due Date:</label>
-                <input type="date" id="dueDate" name="dueDate">
-                <br>
-                <br>
+            // Track current displayed month and year
+            let currentDate = new Date();
 
-                <!--Enter Button-->
-                <button type="submit" id="submit">Add To-Do</button>
-            </fieldset>
-        </form>        
-
-<script>
-
-// CONNECTING FRONT TO BACK API
-const API = "http://127.0.0.1:5000"; // Flask default
-let currentUser = { id: null, name: ""};
-let events = {};
-let currentDate = new Date();
-
-async function api(path, opts = {}){
-  try {
-    const res = await fetch(API + path, {
-      headers: {"Content-Type": "application/json"},
-      ...opts,
-    });
-    if (!res.ok){
-      const msg = await res.text().catch(() => res.statusText);
-      throw new Error(`Server error (${res.status}): ${msg || res.statusText}`);
-    }
-    return res.json();
-  } catch (error) {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Cannot connect to server. Make sure the backend is running on http://127.0.0.1:5000');
-    }
-    throw error;
-  }
-}
-
-// Create/find user and cache id/name
-async function ensureUser(name){
-  const data = await api("/user", {
-    method: "POST",
-    body: JSON.stringify({name}),
-  });
-  currentUser = { id: data.user_id, name: data.name || name};
-}
-
-// Pull all tasks for currentUser and rebuild events
-async function syncFromServer(){
-  if (!currentUser.name) return;
-  const data = await api(`/tasks/${encodeURIComponent(currentUser.name)}`);
-  events = {};
-  for (const t of (data.tasks || [])){
-    const d = (t.due_date || "").trim()
-    if (!d) continue;
-    if (!events[d]) events[d] = [];
-    events[d].push({id: t.id, description: t.description});
-  }
-}
-
-// Add a task for currentUser 
-async function addTask(description, due_date){
-  if (!currentUser.id) throw new Error ("No user selected");
-  await api("/task", {
-    method: "POST",
-    body: JSON.stringify({
-      user_id: currentUser.id,
-      description,
-      due_date
-    }),
-  });
-}
-           // Dynamic page loader: intercept clicks on local .html links and load them into an embedded area
-            async function loadPage(url) {
-                try {
-                    const res = await fetch(url);
-                    if (!res.ok) throw new Error('Failed to load ' + url + ': ' + res.status);
-                    const html = await res.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-
-                    // Move stylesheet links from the fetched head into current document head (avoid duplicates)
-                    const links = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'));
-                    links.forEach(link => {
-                        const href = link.href || link.getAttribute('href');
-                        if (href && !document.querySelector('link[rel="stylesheet"][href="' + href + '"]')) {
-                            const newLink = document.createElement('link');
-                            newLink.rel = 'stylesheet';
-                            newLink.href = href;
-                            document.head.appendChild(newLink);
-                        }
-                    });
-
-                    // Special case: Calendar.html -> inject calendar portion into the existing todo list area
-                    if (url.endsWith('Calendar.html')) {
-                        const todoList = document.getElementById('todoList');
-                        if (!todoList) return;
-
-                        // Build an embedded container to host the calendar markup
-                        const container = document.createElement('div');
-                        container.id = 'embeddedCalendar';
-                        container.className = 'embedded-page';
-
-                        // Extract calendar-related elements from the fetched document
-                        // Prefer elements with ids used in Calendar.html
-      events[dateStr].forEach((task, idx) => {
-        const evDiv = document.createElement("div");
-        evDiv.textContent = task.description;
-        evDiv.classList.add("event");
-
-        // Delete button
-        const delBtn = document.createElement("span");
-        delBtn.textContent = "×";
-        delBtn.classList.add("delete");
-        delBtn.onclick = async (e) => {
-          e.stopPropagation();
-          try {
-            // Delete from server
-            if (task.id) {
-              await api(`/task/${task.id}`, { method: "DELETE" });
+            function saveEvents() {
+                localStorage.setItem("calendarEvents", JSON.stringify(events));
             }
-            // Remove from local events
-            events[dateStr].splice(idx, 1);
-            if (events[dateStr].length === 0) delete events[dateStr];
-            generateCalendar(currentDate);
-          } catch (err) {
-            alert("Error deleting task: " + err.message);
-          }
-                        // Execute scripts from fetched document so the calendar interactivity initializes
-                        const scripts = Array.from(doc.querySelectorAll('script'));
-                        scripts.forEach(s => {
-                            const newScript = document.createElement('script');
-                            if (s.src) {
-                                // Convert relative src to absolute based on url
-                                const src = s.getAttribute('src');
-                                const base = url.substring(0, url.lastIndexOf('/') + 1);
-                                newScript.src = src.startsWith('http') ? src : base + src;
-                            } else {
-                                newScript.textContent = s.textContent;
-                            }
-                            // Append to container to keep scope close to embedded content
-                            container.appendChild(newScript);
-                        });
 
-                        return;
+            function generateCalendar(date) {
+                const tbody = document.querySelector("#calendar tbody");
+                tbody.innerHTML = "";
+
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const firstDay = new Date(year, month).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const today = new Date();
+
+                document.getElementById("monthYear").textContent =
+                    date.toLocaleString("default", { month: "long", year: "numeric" });
+
+                let row = document.createElement("tr");
+                for (let i = 0; i < firstDay; i++) row.appendChild(document.createElement("td"));
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const cell = document.createElement("td");
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                    const dayNumber = document.createElement("div");
+                    dayNumber.textContent = day;
+                    dayNumber.style.fontWeight = "bold";
+                    cell.appendChild(dayNumber);
+
+                    if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                        cell.classList.add("today");
                     }
 
-                    // Default behavior: inject body content (fallback)
-                    // Remove top-level navigation from fetched content to avoid duplicate nav bars
-                    const navs = doc.querySelectorAll('.navigation');
-                    navs.forEach(n => n.remove());
-                    const bodyEl = document.getElementById('body');
-                    bodyEl.innerHTML = doc.body.innerHTML;
+                    if (events[dateStr]) {
+                        cell.classList.add("has-event");
+                        events[dateStr].forEach((ev, idx) => {
+                            const evDiv = document.createElement("div");
+                            evDiv.textContent = ev;
+                            evDiv.classList.add("event");
 
-document.getElementById("eventForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const name = document.getElementById("Name").value.trim();
-  const date = document.getElementById("eventDate").value;
-  const text = document.getElementById("eventText").value.trim();
+                            // Delete button
+                            const delBtn = document.createElement("span");
+                            delBtn.textContent = "×";
+                            delBtn.classList.add("delete");
+                            delBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                events[dateStr].splice(idx, 1);
+                                if (events[dateStr].length === 0) delete events[dateStr];
+                                saveEvents();
+                                generateCalendar(currentDate);
+                            };
+                            evDiv.appendChild(delBtn);
 
-  if (!name || !date || !text) return;
+                            cell.appendChild(evDiv);
+                        });
+                    }
 
-  try{
-    // Makes sure user still exists (server returns user_id)
-    if (!currentUser.name || currentUser.name !== name){
-      await ensureUser(name);
-    }
-
-    // Add task to database
-    await addTask(text, date);
-
-    // Pull fresh tasks from server
-    await syncFromServer();
-    generateCalendar(currentDate);
-
-    // Clear form
-    e.target.reset();
-  } catch (err){
-    alert("Error: " + err.message);
-  }
-});                 
-});
-
-                } catch (err) {
-                    console.error(err);
-                    document.getElementById('body').innerHTML = '<p style="color:red">Unable to load page: ' + err.message + '</p>';
+                    row.appendChild(cell);
+                    if ((firstDay + day) % 7 === 0 || day === daysInMonth) {
+                        tbody.appendChild(row);
+                        row = document.createElement("tr");
+                    }
                 }
             }
 
-            // Global click handler to intercept local HTML links
-            document.addEventListener('click', function(e) {
-                const a = e.target.closest('a');
-                if (!a) return;
-                const href = a.getAttribute('href');
-                if (!href) return;
-                // Only intercept relative HTML pages in the same folder
-                if (href.endsWith('.html') && !href.startsWith('http') && !href.startsWith('mailto:')) {
-                    e.preventDefault();
-                    loadPage(href);
-                }
+            // Navigation buttons
+            document.getElementById("prevMonth").addEventListener("click", () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                generateCalendar(currentDate);
+            });
+            document.getElementById("nextMonth").addEventListener("click", () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                generateCalendar(currentDate);
             });
 
-            // Show the to-do fieldset only after entering name
-            (function attachTodoHandlers() {
-                const nameForm = document.querySelector('form[action=""]');
-                if (nameForm) {
-                    nameForm.addEventListener('submit', function(event) {
-                        event.preventDefault();
-                        const value = document.getElementById('name').value;
-                        document.getElementById('result').innerHTML = 'To-do for ' + value + ':<br><br>';
-                        document.getElementById('todoFieldset').style.display = '';
-                    });
-                }
+            // Add event
+            document.getElementById("eventForm").addEventListener("submit", (e) => {
+                e.preventDefault();
+                const date = document.getElementById("eventDate").value;
+                const text = document.getElementById("eventText").value;
 
-                const todoForm = document.getElementById('todoForm');
-                if (todoForm) {
-                    todoForm.addEventListener('submit', function(event) {
-                        event.preventDefault();
-                        const todoText = document.getElementById('todo').value.trim();
-                        const dueDate = document.getElementById('dueDate').value;
-                        if (todoText) {
-                            const li = document.createElement('li');
-                            const checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            // When checkbox is checked, apply strikethrough
-                            checkbox.addEventListener('change', function() {
-                                if (checkbox.checked) {
-                                    li.classList.add('strikethrough');
-                                } else {
-                                    li.classList.remove('strikethrough');
-                                }
-                            });
-                            li.appendChild(checkbox);
-                            li.appendChild(document.createTextNode(' ' + todoText));
-                            if (dueDate) {
-                                const due = document.createElement('span');
-                                due.className = 'due-date';
-                                due.textContent = 'Due: ' + dueDate;
-                                li.appendChild(due);
-                            }
-                            const listEl = document.getElementById('todoList');
-                            if (listEl) listEl.appendChild(li);
-                            document.getElementById('todo').value = '';
-                            document.getElementById('dueDate').value = '';
-                        }
-                    });
-                }
-            })();
+                if (!events[date]) events[date] = [];
+                events[date].push(text);
+                saveEvents();
+
+                generateCalendar(currentDate);
+                document.getElementById("eventForm").reset();
+            });
+
+            // Initial calendar load
+            generateCalendar(currentDate);
         </script>
+
     </div>
 </body>
 

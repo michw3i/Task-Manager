@@ -3,7 +3,13 @@ from flask_cors import CORS
 import sqlite3
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]}}, supports_credentials=False)
+
 
 DB_NAME = 'tasks.db'
 
@@ -15,7 +21,7 @@ def get_db():
     return conn
 
 # Add or find user
-@app.route('/user', methods=['POST']) # This creates a POST API route at /user
+@app.route('/api/user', methods=['POST']) # This creates a POST API route at /user
 def add_user():
     name = request.json.get('name') # Gets the "name" value from the request's JSON data
     conn = get_db() # Connects to the database
@@ -29,7 +35,7 @@ def add_user():
     conn.close()
     return jsonify({'user_id': user_id})
 
-@app.route('/task', methods=['POST'])
+@app.route('/api/task', methods=['POST'])
 def add_task():
     user_id = request.json.get('user_id')
     description = request.json.get('description')
@@ -43,7 +49,7 @@ def add_task():
     return jsonify({'status': 'Task added'})
 
 # Get tasks for a user
-@app.route('/tasks/<name>', methods=['GET'])
+@app.route('/api/tasks/<name>', methods=['GET'])
 def get_user_tasks(name):
     conn = get_db()
     c = conn.cursor()
@@ -61,7 +67,7 @@ def get_user_tasks(name):
 
 # Get summary of all tasks 
 # Delete a task
-@app.route('/task/<int:task_id>', methods=['DELETE'])
+@app.route('/api/task/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     conn = get_db()
     c = conn.cursor()
@@ -70,7 +76,7 @@ def delete_task(task_id):
     conn.close()
     return jsonify({'status': 'Task deleted'})
 
-@app.route('/summary', methods=['GET'])
+@app.route('/api/summary', methods=['GET'])
 def get_summary():
     conn = get_db()
     c = conn.cursor()
@@ -82,9 +88,21 @@ def get_summary():
     conn.close()
     return jsonify({'summary': summary})
 
+# app route that serves the frontend
 @app.route('/')
-def home():
-    return 'Welcome to the Task Manager API. Use /user, /task, /tasks/<name>, or /summary.'
+def serve_frontend():
+    with open('../frontend/Home.html') as f:
+        return f.read()
+
+@app.route('/todo')
+def serve_todo():
+    with open('../frontend/Todo.html') as f:
+        return f.read()
+
+@app.route(('/financials'))
+def serve_financials():
+    with open('../frontend/Financials.html') as f:
+        return f.read()
 
 
 if __name__ == '__main__':
