@@ -253,6 +253,9 @@
         <!-- Totals Table -->
         <div id="totalsTableContainer">
             <h2>Current Totals</h2>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:8px;">
+        <button id="clearFinancials" title="Clear all financial entries">Clear Financials</button>
+      </div>
             <table id="totalsTable">
                 <thead>
                     <tr>
@@ -390,6 +393,16 @@
       // Initialize: load persisted state and populate UI
       document.addEventListener('DOMContentLoaded', () => {
         loadState();
+        rebuildEntriesTable();
+        updateTotalsTable();
+      });
+
+      // Clear all persisted financials
+      document.getElementById('clearFinancials').addEventListener('click', () => {
+        if (!confirm('Clear all financial entries and totals? This cannot be undone.')) return;
+        entries = [];
+        balances = {};
+        saveState();
         rebuildEntriesTable();
         updateTotalsTable();
       });
