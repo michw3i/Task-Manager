@@ -491,6 +491,19 @@
             const evDiv = document.createElement("div");
             evDiv.textContent = ev.text;
             evDiv.classList.add("event");
+            // Determine date state for coloring
+            try {
+              const evDate = new Date(dateStr + 'T00:00:00');
+              // normalize today's date
+              const now = new Date();
+              const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              if (evDate < todayDate) evDiv.classList.add('past-event');
+              else if (evDate.getTime() === todayDate.getTime()) evDiv.classList.add('today-event');
+              else evDiv.classList.add('future-event');
+            } catch (err) {
+              // fallback: future
+              evDiv.classList.add('future-event');
+            }
             // If task is marked completed in checklist, give calendar event a completed style
             if (hiddenTasks.has(ev.id)) evDiv.classList.add('event-completed');
             //adds delete button for the event inputted in the calendar
