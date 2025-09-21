@@ -1,9 +1,20 @@
 body {
-    margin-left: 10%;
-    margin-right: 10%;
-    margin-top: 0;
-    padding-left: 0;
-    background-color: rgb(226, 235, 235);
+    margin: 0;
+    background: radial-gradient(circle at 70% 80%, rgba(255,255,255,0.08) 0%, rgba(0,0,0,1) 70%),
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0%, rgba(0,0,0,1) 60%);
+    background-color: #0b0b0c; /* fallback for browsers without gradients */
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color: #f3f3f3;
+}
+
+ul.navigation {
+    background-color: rgba(123, 157, 157, 0.15);
+    list-style-type: none;
+    text-align: center;
+    padding: 1rem 0;
+    margin: 0;
+    border-radius: 8px;
+    backdrop-filter: blur(6px);
 }
 
 /*heading 1 formatting*/

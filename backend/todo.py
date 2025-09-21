@@ -67,12 +67,12 @@ def get_user_tasks(name):
     return jsonify({'name': name, 'tasks': tasks})
 
 # Get summary of all tasks
-# Delete a task
-@app.route('/api/task/<int:task_id>', methods=['DELETE'])
-def delete_task(task_id):
+# Delete all tasks
+@app.route('/api/tasks', methods=['DELETE'])
+def delete_all_tasks():
     conn = get_db()
     c = conn.cursor()
-    c.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
+    c.execute('DELETE FROM tasks')
     conn.commit()
     conn.close()
     return jsonify({'status': 'Task deleted'})
