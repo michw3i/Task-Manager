@@ -2,355 +2,556 @@
 <html lang="en">
 
 <head>
-    <title>Task Manager | To-do</title>
-    <style>
-        body {
-            text-align: center;
-        }
+  <title>Task Manager | To-do</title>
+  <style>
+    :root {
+      /* same gradient palette you used on Home */
+      --bg-hi: #AFD5C7;
+      --bg-mid: #6ba9bb;
+      --bg-lo: #6e65b5;
 
-        table {
-            border-collapse: collapse;
-            margin: auto;
-            width: 350px;
-        }
+      --ink: #2b2b2b;
+      /* base text on light sections */
+      --ink-invert: #f5f7fa;
+      /* text on dark/nav */
+      --accent: #6e65b5;
 
-        th,
-        td {
-            border: 1px solid #ccc;
-            width: 45px;
-            height: 60px;
-            vertical-align: top;
-            padding: 2px;
-            position: relative;
-        }
+      /* nav bar colors (flat, no pills) */
+      --nav-top: rgba(110, 101, 181, 0.60);
+      --nav-bot: rgba(80, 72, 140, 0.60);
+      --nav-text: #f3f3f3;
+      --nav-text-hover: #ffffff;
+      --nav-border: rgba(255, 255, 255, 0.15);
 
-        th {
-            background: #f4f4f4;
-        }
+      /* surfaces for cards/table */
+      --card: rgba(255, 255, 255, 0.75);
+      --card-soft: rgba(255, 255, 255, 0.6);
+      --line: #d9dde6;
+      --muted: #8691a6;
 
-        td.today {
-            background: #ffeb3b;
-        }
+      /* calendar colors */
+      --today: #ffeb3b;
+      --cell-event: #e9f6ff;
+      --badge: #cfe9ff;
+      --badge-text: #0b3a55;
+      --delete: #d45555;
+    }
 
-        td.has-event {
-            background: #e0f7fa;
-        }
+    /* ===== Page background (same gradient as Home) ===== */
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Inter, Arial, sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background:
+        radial-gradient(1200px 700px at 50% -10%, #ffffff11, transparent 60%),
+        radial-gradient(1400px 900px at 50% 110%, #ffffff08, transparent 70%),
+        linear-gradient(var(--bg-hi), var(--bg-mid) 50%, var(--bg-lo));
+      overflow-x: hidden;
+    }
 
-        div.event {
-            font-size: 0.7em;
-            background: #b2dfdb;
-            margin: 1px 0;
-            padding: 1px 2px;
-            border-radius: 3px;
-            cursor: pointer;
-            overflow-wrap: break-word;
-        }
+    /* ===== Flat gradient menu bar (no circles) ===== */
+    ul.navigation {
+      list-style: none;
+      margin: 0;
+      padding: 18px 6vw;
+      display: flex;
+      justify-content: center;
+      column-gap: clamp(32px, 6vw, 80px);
+      background: linear-gradient(180deg, var(--nav-top), var(--nav-bot));
+      border-bottom: 1px solid var(--nav-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
 
-        div.delete {
-            font-weight: bold;
-            color: red;
-            margin-left: 3px;
-            cursor: pointer;
-        }
+    ul.navigation li {
+      display: inline-block
+    }
 
-        #navButtons {
-            margin-bottom: 10px;
-        }
+    ul.navigation a {
+      font-family: Georgia, serif;
+      /* matches your Home nav look */
+      letter-spacing: .18em;
+      font-size: clamp(18px, 2.2vw, 32px);
+      color: var(--nav-text);
+      text-decoration: none;
+      line-height: 1;
+      padding: 0;
+      /* text-only tabs (no pill) */
+      transition: color .2s ease, text-shadow .2s ease;
+    }
 
-        button {
-            margin: 0 10px;
-            padding: 5px 10px;
-        }
+    ul.navigation a:hover,
+    ul.navigation a:focus {
+      color: var(--nav-text-hover);
+      text-decoration: underline;
+      text-underline-offset: 6px;
+    }
 
-        /* Checklist styles */
-        #dataList {
-            list-style: none;
-            padding-left: 0;
-            max-width: 420px;
-            margin: 12px auto;
-            text-align: left;
-        }
+    /* ===== Content wrapper (centers like Home) ===== */
+    #body {
+      position: relative;
+      flex: 1;
+      padding: 6vh 6vw 12vh;
+      text-align: center;
+    }
 
-        #dataList li {
-            padding: 6px 8px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-        }
+    /* ===== Headings ===== */
+    h1 {
+      margin: 18px 0 8px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      font-size: clamp(28px, 5.6vw, 56px);
+      color: #fff;
+      /* strong contrast on gradient */
+      text-shadow: 0 2px 10px rgba(0, 0, 0, .25);
+    }
 
-        #dataList li span {
-            margin-left: 8px;
-        }
+    h2 {
+      margin: 8px 0 14px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: #f7f9ff;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, .2);
+    }
 
-        .event-completed {
-            text-decoration: line-through;
-            color: #888;
-        }
+    h3 {
+      margin: 28px 0 10px;
+      color: #fff;
+      letter-spacing: .03em;
+    }
 
-        .past-event {
-            color: #c62828;
-            background: rgba(198, 40, 40, 0.05);
-        }
+    /* ===== Calendar container ===== */
+    #calendar {
+      border-collapse: collapse;
+      margin: 14px auto 26px;
+      width: min(92vw, 760px);
+      background: var(--card);
+      backdrop-filter: blur(6px);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(26, 22, 84, .18);
+    }
 
-        .today-event {
-            color: #795548;
-            background: rgba(255, 235, 59, 0.25);
-        }
+    #calendar thead th {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .85), rgba(255, 255, 255, .70));
+      color: #2b2f3a;
+      font-weight: 700;
+      letter-spacing: .06em;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
 
-        .future-event {
-            color: #2e7d32;
-            background: rgba(76, 175, 80, 0.05);
-        }
-    </style>
+    #calendar th,
+    #calendar td {
+      width: calc(100%/7);
+      height: 90px;
+      vertical-align: top;
+      padding: 10px 8px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      position: relative;
+    }
+
+    #calendar tr:last-child td {
+      border-bottom: none
+    }
+
+    #calendar th:last-child,
+    #calendar td:last-child {
+      border-right: none
+    }
+
+    /* Day number */
+    #calendar td>div:first-child {
+      font-weight: 700;
+      color: #2b2b2b;
+      opacity: .9;
+      margin-bottom: 6px;
+    }
+
+    /* Today + cells with events */
+    #calendar td.today {
+      background: linear-gradient(180deg, #fff3b0, #ffe66a);
+    }
+
+    #calendar td.has-event {
+      background: linear-gradient(180deg, #f3fbff, #e9f6ff);
+    }
+
+    /* Event “chips” */
+    div.event {
+      font-size: .82em;
+      color: var(--badge-text);
+      background: var(--badge);
+      margin: 4px 0;
+      padding: 4px 6px;
+      border-radius: 8px;
+      cursor: default;
+      overflow-wrap: anywhere;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      box-shadow: 0 1px 0 #ffffff, 0 2px 8px rgba(2, 44, 82, .12) inset;
+    }
+
+    .delete {
+      font-weight: 900;
+      color: var(--delete);
+      cursor: pointer;
+      margin-left: 6px;
+      line-height: 1;
+    }
+
+    /* Event state colors */
+    .event.past-event {
+      background: #fdecea;
+      color: #a33;
+    }
+
+    .event.today-event {
+      background: #fff7cc;
+      color: #7a5a00;
+    }
+
+    .event.future-event {
+      background: #e8f6ea;
+      color: #1e7f2a;
+    }
+
+    /* Month nav buttons */
+    #navButtons {
+      margin: 8px 0 14px
+    }
+
+    #navButtons button {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, .55);
+      color: #fff;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .35), rgba(255, 255, 255, .15));
+      padding: 8px 14px;
+      border-radius: 10px;
+      margin: 0 8px;
+      letter-spacing: .04em;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+      transition: transform .12s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    #navButtons button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 26px rgba(0, 0, 0, .22);
+      background: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, .22));
+    }
+
+    /* Add event form */
+    form#eventForm {
+      width: min(92vw, 760px);
+      margin: 8px auto 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      background: var(--card-soft);
+      padding: 14px;
+      border-radius: 12px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 24px rgba(26, 22, 84, .14);
+    }
+
+    form#eventForm label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #263449;
+      font-weight: 600;
+    }
+
+    form#eventForm input[type="text"],
+    form#eventForm input[type="date"] {
+      border: 1px solid #cfd6e6;
+      background: #fff;
+      color: #1f2633;
+      padding: 8px 10px;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    form#eventForm button[type="submit"] {
+      appearance: none;
+      border: 1px solid #cfd6e6;
+      background: linear-gradient(180deg, #ffffff, #edf2ff);
+      color: #1d2752;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .2s ease;
+    }
+
+    form#eventForm button[type="submit"]:hover {
+      transform: translateY(-1px)
+    }
+
+    /* Checklist list styles */
+    #eventChecklist {
+      width: min(92vw, 760px);
+      margin: 6px auto 50px;
+      text-align: left;
+      color: #101521;
+    }
+
+    #eventChecklist li {
+      background: var(--card);
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin: 8px 0;
+      list-style: none;
+      border: 1px solid #e6ebf5;
+    }
+
+    /* completed event appearance in calendar */
+    .event.event-completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+  </style>
+
 </head>
 
 <body>
-    <ul class="navigation">
-        <li><a href="/">Home</a></li>
-        <li><a href="/todo">To-do</a></li>
-        <li><a href="/financials">Financials</a></li>
-    </ul>
+  <ul class="navigation">
+    <li><a href="/">Home</a></li>
+    <li><a href="/todo">To-do</a></li>
+    <li><a href="/financials">Financials</a></li>
+  </ul>
 
-    <div id="body">
-        <h1>To-do List</h1>
+  <div id="body">
+    <h1>To-do List</h1>
 
-        <h2 id="monthYear"></h2>
-        <div id="navButtons">
-            <button id="prevMonth">&lt; Previous</button>
-            <button id="nextMonth">Next &gt;</button>
-            <button id="clearStorage" title="Clear all saved events and names">Clear Storage</button>
-        </div>
-
-        <table id="calendar">
-            <thead>
-                <tr>
-                    <th>Sun</th>
-                    <th>Mon</th>
-                    <th>Tue</th>
-                    <th>Wed</th>
-                    <th>Thu</th>
-                    <th>Fri</th>
-                    <th>Sat</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-
-        <h3>Add Event</h3>
-        <form id="eventForm" action="/api/task" method="POST">
-            <label>Name: <input type="text" name="user_id" id="Name" required></label>
-            <label>Date: <input type="date" name="due_date" id="eventDate" required></label>
-            <label>Event: <input type="text" name="description" id="eventText" required></label>
-            <button type="submit">Add To-do</button>
-        </form>
-
-        <h3>Event Checklist</h3>
-        <ul id="dataList"></ul>
-
+    <h2 id="monthYear"></h2>
+    <div id="navButtons">
+      <button id="prevMonth">&lt; Previous</button>
+      <button id="nextMonth">Next &gt;</button>
+      <button id="clearStorage" title="Clear all saved events and names">Clear Storage</button>
     </div>
 
-    <script>
-        let events = {};
-        let currentDate = new Date();
-        // client-side set of task IDs hidden by checklist (checked but not permanently deleted)
-        let hiddenTasks = new Set(JSON.parse(localStorage.getItem('hiddenTasks') || '[]'));
+    <table id="calendar">
+      <thead>
+        <tr>
+          <th>Sun</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>Sat</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-        function saveHiddenTasks() {
-            localStorage.setItem('hiddenTasks', JSON.stringify(Array.from(hiddenTasks)));
-        }
+    <h3>Add Event</h3>
+    <form id="eventForm" action="/api/task" method="POST">
+      <label>Name: <input type="text" name="user_id" id="Name" required></label>
+      <label>Date: <input type="date" name="due_date" id="eventDate" required></label>
+      <label>Event: <input type="text" name="description" id="eventText" required></label>
+      <button type="submit">Add To-do</button>
+    </form>
 
-        //returns collected data from backend and updates calendar
-        async function loadEvents() {
-            const res = await fetch("/api/summary");
-            const data = await res.json();
-            events = {};
+    <h3>To-do Checklist</h3>
+    <ul id="dataList"></ul>
 
-            //groups tasks by due date
-            data.summary.forEach(task => {
-                if (!events[task.due_date]) events[task.due_date] = [];
-                events[task.due_date].push({ text: `${task.name}: ${task.description}`, id: task.id });
-            });
-            generateCalendar(currentDate);
-        }
+  </div>
 
-        //returns and formats all tasks into a checklist under add to-do
-        // Checking the checkbox hides the task in calendar (client-side) and is reversible.
-        // The Delete button permanently removes the task via backend.
-        async function loadChecklist() {
-            const res = await fetch("/api/summary");
-            const data = await res.json();
-            const list = document.getElementById("dataList");
-            list.innerHTML = "";
-            data.summary.forEach(task => {
-                const li = document.createElement("li");
+  <script>
+    let events = {};
+    let currentDate = new Date();
+    // client-side set of task IDs hidden by checklist (checked but not permanently deleted)
+    let hiddenTasks = new Set(JSON.parse(localStorage.getItem('hiddenTasks') || '[]'));
 
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.id = `task-${task.id}`;
-                checkbox.style.marginRight = '8px';
-                checkbox.checked = hiddenTasks.has(task.id);
+    function saveHiddenTasks() {
+      localStorage.setItem('hiddenTasks', JSON.stringify(Array.from(hiddenTasks)));
+    }
 
-                const label = document.createElement("label");
-                label.htmlFor = checkbox.id;
-                label.textContent = `${task.name}: ${task.description} (due: ${task.due_date})`;
-                label.style.flex = '1';
-                if (hiddenTasks.has(task.id)) label.classList.add('event-completed');
+    //returns collected data from backend and updates calendar
+    async function loadEvents() {
+      const res = await fetch("/api/summary");
+      const data = await res.json();
+      events = {};
 
-                const delBtn = document.createElement('button');
-                delBtn.textContent = 'Delete';
-                delBtn.style.marginLeft = '8px';
+      //groups tasks by due date
+      data.summary.forEach(task => {
+        if (!events[task.due_date]) events[task.due_date] = [];
+        events[task.due_date].push({ text: `${task.name}: ${task.description}`, id: task.id });
+      });
+      generateCalendar(currentDate);
+    }
 
-                // Toggle hidden state (client-side) when checkbox changes
-                checkbox.addEventListener('change', () => {
-                    if (checkbox.checked) {
-                        hiddenTasks.add(task.id);
-                        label.classList.add('event-completed');
-                    } else {
-                        hiddenTasks.delete(task.id);
-                        label.classList.remove('event-completed');
-                    }
-                    saveHiddenTasks();
-                    // regenerate calendar to reflect hidden state
-                    generateCalendar(currentDate);
-                });
+    //returns and formats all tasks into a checklist under add to-do
+    // Checking the checkbox hides the task in calendar (client-side) and is reversible.
+    // The Delete button permanently removes the task via backend.
+    async function loadChecklist() {
+      const res = await fetch("/api/summary");
+      const data = await res.json();
+      const list = document.getElementById("dataList");
+      list.innerHTML = "";
+      data.summary.forEach(task => {
+        const li = document.createElement("li");
 
-                // Delete permanently via backend; also remove any hidden state
-                delBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    label.classList.add('event-completed');
-                    checkbox.disabled = true;
-                    delBtn.disabled = true;
-                    await fetch(`/api/task/${task.id}`, { method: 'DELETE' });
-                    hiddenTasks.delete(task.id);
-                    saveHiddenTasks();
-                    await loadEvents();
-                    await loadChecklist();
-                });
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = `task-${task.id}`;
+        checkbox.style.marginRight = '8px';
+        checkbox.checked = hiddenTasks.has(task.id);
 
-                li.appendChild(checkbox);
-                li.appendChild(label);
-                li.appendChild(delBtn);
-                list.appendChild(li);
-            });
-        }
+        const label = document.createElement("label");
+        label.htmlFor = checkbox.id;
+        label.textContent = `${task.name}: ${task.description} (due: ${task.due_date})`;
+        label.style.flex = '1';
+        if (hiddenTasks.has(task.id)) label.classList.add('event-completed');
 
-        //adds inputted data into backend and reloads the resulting data on calendar and checklist
-        async function addEvent(userName, description, date) {
-            const userRes = await fetch("/api/user", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: userName })
-            });
-            const user = await userRes.json();
-
-            //adds task
-            await fetch("/api/task", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ user_id: user.user_id, description, due_date: date })
-            });
-
-            await loadEvents(); //refreshes calendar view
-            await loadChecklist(); //refreshes checklist
-        }
-
-        //creates calendar
-        function generateCalendar(date) {
-            const tbody = document.querySelector("#calendar tbody");
-            tbody.innerHTML = "";
-            const year = date.getFullYear();
-            const month = date.getMonth();
-            const firstDay = new Date(year, month).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const today = new Date();
-
-            document.getElementById("monthYear").textContent = date.toLocaleString("default", { month: "long", year: "numeric" });
-
-            let row = document.createElement("tr");
-            for (let i = 0; i < firstDay; i++) row.appendChild(document.createElement("td"));
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const cell = document.createElement("td");
-                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const dayNumber = document.createElement("div");
-                dayNumber.textContent = day;
-                dayNumber.style.fontWeight = "bold";
-                cell.appendChild(dayNumber);
-
-                //highlights today
-                if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-                    cell.classList.add("today");
-                }
-
-                //add events to given date
-                if (events[dateStr]) {
-                    cell.classList.add("has-event");
-                    events[dateStr].forEach(ev => {
-                        // Skip rendering if the task is hidden by checklist
-                        if (hiddenTasks.has(ev.id)) return;
-                        const evDiv = document.createElement("div");
-                        evDiv.textContent = ev.text;
-                        evDiv.classList.add("event");
-
-                        //adds delete button for the event inputted in the calendar
-                        const delBtn = document.createElement("span");
-                        delBtn.textContent = "×";
-                        delBtn.classList.add("delete");
-                        delBtn.onclick = async (e) => {
-                            e.stopPropagation();
-                            await fetch(`/api/task/${ev.id}`, { method: "DELETE" });
-
-                            // Remove hidden state for this task if present
-                            hiddenTasks.delete(ev.id);
-                            saveHiddenTasks();
-
-                            // Refresh calendar and checklist
-                            await loadEvents();
-                            await loadChecklist();
-                        };
-                        evDiv.appendChild(delBtn);
-                        cell.appendChild(evDiv);
-                    });
-                }
-
-                row.appendChild(cell);
-                if ((firstDay + day) % 7 === 0 || day === daysInMonth) {
-                    tbody.appendChild(row);
-                    row = document.createElement("tr");
-                }
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            loadEvents();
-            loadChecklist();
-
-            document.getElementById("prevMonth").addEventListener("click", () => {
-                currentDate.setMonth(currentDate.getMonth() - 1);
-                generateCalendar(currentDate);
-            });
-            document.getElementById("nextMonth").addEventListener("click", () => {
-                currentDate.setMonth(currentDate.getMonth() + 1);
-                generateCalendar(currentDate);
-            });
-
-            document.getElementById("clearStorage").addEventListener("click", async () => {
-                if (!confirm('Clear all saved events and names? This cannot be undone.')) return;
-                await fetch('/api/tasks', { method: 'DELETE' });
-                await loadEvents();
-                await loadChecklist();
-            });
-
-            document.getElementById("eventForm").addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const userName = document.getElementById("Name").value;
-                const date = document.getElementById("eventDate").value;
-                const text = document.getElementById("eventText").value;
-                await addEvent(userName, text, date);
-                document.getElementById("eventForm").reset();
-            });
+        // Toggle hidden state (client-side) when checkbox changes
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            hiddenTasks.add(task.id);
+            label.classList.add('event-completed');
+          } else {
+            hiddenTasks.delete(task.id);
+            label.classList.remove('event-completed');
+          }
+          saveHiddenTasks();
+          // regenerate calendar to reflect hidden state
+          generateCalendar(currentDate);
         });
-    </script>
+        li.appendChild(checkbox);
+        li.appendChild(label);
+        list.appendChild(li);
+      });
+    }
+
+    //adds inputted data into backend and reloads the resulting data on calendar and checklist
+    async function addEvent(userName, description, date) {
+      const userRes = await fetch("/api/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: userName })
+      });
+      const user = await userRes.json();
+
+      //adds task
+      await fetch("/api/task", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.user_id, description, due_date: date })
+      });
+
+      await loadEvents(); //refreshes calendar view
+      await loadChecklist(); //refreshes checklist
+    }
+
+    //creates calendar
+    function generateCalendar(date) {
+      const tbody = document.querySelector("#calendar tbody");
+      tbody.innerHTML = "";
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const firstDay = new Date(year, month).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+
+      document.getElementById("monthYear").textContent = date.toLocaleString("default", { month: "long", year: "numeric" });
+
+      let row = document.createElement("tr");
+      for (let i = 0; i < firstDay; i++) row.appendChild(document.createElement("td"));
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement("td");
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayNumber = document.createElement("div");
+        dayNumber.textContent = day;
+        dayNumber.style.fontWeight = "bold";
+        cell.appendChild(dayNumber);
+
+        //highlights today
+        if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+          cell.classList.add("today");
+        }
+
+        //add events to given date
+        if (events[dateStr]) {
+          cell.classList.add("has-event");
+          events[dateStr].forEach(ev => {
+            const evDiv = document.createElement("div");
+            evDiv.textContent = ev.text;
+            evDiv.classList.add("event");
+            // If task is marked completed in checklist, give calendar event a completed style
+            if (hiddenTasks.has(ev.id)) evDiv.classList.add('event-completed');
+            //adds delete button for the event inputted in the calendar
+            const delBtn = document.createElement("span");
+            delBtn.textContent = "×";
+            delBtn.classList.add("delete");
+            delBtn.onclick = async (e) => {
+              e.stopPropagation();
+              await fetch(`/api/task/${ev.id}`, { method: "DELETE" });
+
+              // Remove any hidden state for this task if present
+              hiddenTasks.delete(ev.id);
+              saveHiddenTasks();
+
+              // Refresh calendar and checklist
+              await loadEvents();
+              await loadChecklist();
+            };
+            evDiv.appendChild(delBtn);
+            cell.appendChild(evDiv);
+          });
+        }
+
+        row.appendChild(cell);
+        if ((firstDay + day) % 7 === 0 || day === daysInMonth) {
+          tbody.appendChild(row);
+          row = document.createElement("tr");
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadEvents();
+      loadChecklist();
+
+      document.getElementById("prevMonth").addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        generateCalendar(currentDate);
+      });
+      document.getElementById("nextMonth").addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        generateCalendar(currentDate);
+      });
+
+      document.getElementById("clearStorage").addEventListener("click", async () => {
+        if (!confirm('Clear all saved events and names? This cannot be undone.')) return;
+        await fetch('/api/tasks', { method: 'DELETE' });
+        await loadEvents();
+        await loadChecklist();
+      });
+
+      document.getElementById("eventForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const userName = document.getElementById("Name").value;
+        const date = document.getElementById("eventDate").value;
+        const text = document.getElementById("eventText").value;
+        await addEvent(userName, text, date);
+        document.getElementById("eventForm").reset();
+      });
+    });
+  </script>
 </body>
 
 </html>

@@ -42,8 +42,10 @@
 </form>
 
 <script>
-// Load events from localStorage
+// Load events from localStorage. Expected shape: { 'YYYY-MM-DD': [ { id, text }, ... ] }
 let events = JSON.parse(localStorage.getItem("calendarEvents") || "{}");
+// Set of hidden task ids created by the checklist on the To-do page
+let hiddenTasks = new Set(JSON.parse(localStorage.getItem('hiddenTasks') || '[]'));
 
 // Track current displayed month and year
 let currentDate = new Date();
@@ -82,10 +84,12 @@ function generateCalendar(date) {
     }
 
     if (events[dateStr]) {
-      cell.classList.add("has-event");
-      events[dateStr].forEach((ev, idx) => {
+      // Filter out events currently hidden by the checklist
+      const visible = events[dateStr].filter(ev => !hiddenTasks.has(ev.id));
+      if (visible.length) cell.classList.add("has-event");
+      visible.forEach((ev, idx) => {
         const evDiv = document.createElement("div");
-        evDiv.textContent = ev;
+        evDiv.textContent = ev.text || ev; // support legacy string events
         evDiv.classList.add("event");
 
         // Delete button
@@ -94,8 +98,11 @@ function generateCalendar(date) {
         delBtn.classList.add("delete");
         delBtn.onclick = (e) => {
           e.stopPropagation();
-          events[dateStr].splice(idx, 1);
-          if (events[dateStr].length === 0) delete events[dateStr];
+          // find and remove from underlying events structure
+          const list = events[dateStr];
+          const removeIdx = list.findIndex(x => x.id === ev.id || x.text === ev.text);
+          if (removeIdx !== -1) list.splice(removeIdx, 1);
+          if (list.length === 0) delete events[dateStr];
           saveEvents();
           generateCalendar(currentDate);
         };
@@ -139,6 +146,26 @@ document.getElementById("eventForm").addEventListener("submit", (e) => {
 
 // Initial calendar load
 generateCalendar(currentDate);
+
+// Listen for storage changes (e.g., checklist hiddenTasks or calendarEvents updated on the To-do page)
+window.addEventListener('storage', (e) => {
+  if (e.key === 'hiddenTasks') {
+    try {
+      hiddenTasks = new Set(JSON.parse(e.newValue || '[]'));
+    } catch (err) {
+      hiddenTasks = new Set();
+    }
+    generateCalendar(currentDate);
+  }
+  if (e.key === 'calendarEvents') {
+    try {
+      events = JSON.parse(e.newValue || '{}');
+    } catch (err) {
+      events = {};
+    }
+    generateCalendar(currentDate);
+  }
+});
 </script>
 
 </body>
