@@ -268,13 +268,18 @@
         </div>
 
         <script>
-            const balances = {};
+            const STORAGE_KEY = 'taskmgr:financials';
+
+            // balances map of "from->to" => number
+            let balances = {};
+            // keep a list of entries for persistence and table rebuilds
+            let entries = [];
             const currency = new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: 'USD'
             });
 
-            document.getElementById('financialsForm').addEventListener('submit', function (event) {
+      document.getElementById('financialsForm').addEventListener('submit', function (event) {
                 event.preventDefault();
 
                 const who = document.getElementById('who').value.trim();
@@ -282,23 +287,61 @@
                 const desc = document.getElementById('financial').value.trim();
                 const amount = parseFloat(document.getElementById('amount').value.trim());
 
-                if (who && to && desc && !isNaN(amount) && amount > 0 && who !== to) {
-                    const tableBody = document.getElementById('financialsTable').getElementsByTagName('tbody')[0];
-                    const newRow = tableBody.insertRow();
-                    newRow.insertCell(0).textContent = who;
-                    newRow.insertCell(1).textContent = to;
-                    newRow.insertCell(2).textContent = desc;
-                    newRow.insertCell(3).textContent = currency.format(amount);
+        if (who && to && desc && !isNaN(amount) && amount > 0 && who !== to) {
+          // Add entry to in-memory list and persist
+          const entry = { who, to, desc, amount };
+          entries.push(entry);
+          saveState();
 
-                    updateBalances(who, to, amount);
-                    updateTotalsTable();
+          rebuildEntriesTable();
 
-                    document.getElementById('who').value = '';
-                    document.getElementById('owesTo').value = '';
-                    document.getElementById('financial').value = '';
-                    document.getElementById('amount').value = '';
-                }
+          updateBalances(who, to, amount);
+          updateTotalsTable();
+
+          document.getElementById('who').value = '';
+          document.getElementById('owesTo').value = '';
+          document.getElementById('financial').value = '';
+          document.getElementById('amount').value = '';
+        }
             });
+
+      // Persist state to localStorage
+      function saveState() {
+        const payload = { entries, balances };
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        } catch (e) {
+          console.warn('Could not save financials to localStorage', e);
+        }
+      }
+
+      // Load persisted state (if any) and populate UI
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+          const payload = JSON.parse(raw);
+          entries = payload.entries || [];
+          balances = payload.balances || {};
+        } catch (e) {
+          console.warn('Could not load financials from localStorage', e);
+          entries = [];
+          balances = {};
+        }
+      }
+
+      // Rebuild the entries table from `entries` array
+      function rebuildEntriesTable() {
+        const tableBody = document.getElementById('financialsTable').getElementsByTagName('tbody')[0];
+        tableBody.innerHTML = '';
+        entries.forEach(ent => {
+          const newRow = tableBody.insertRow();
+          newRow.insertCell(0).textContent = ent.who;
+          newRow.insertCell(1).textContent = ent.to;
+          newRow.insertCell(2).textContent = ent.desc;
+          newRow.insertCell(3).textContent = currency.format(ent.amount);
+        });
+      }
 
             function updateBalances(from, to, amount) {
                 const key = `${from}->${to}`;
@@ -314,8 +357,9 @@
                         delete balances[reverseKey];
                     }
                 } else {
-                    balances[key] = (balances[key] || 0) + amount;
+          balances[key] = (balances[key] || 0) + amount;
                 }
+        saveState();
             }
 
             function updateTotalsTable() {
@@ -339,7 +383,16 @@
                     row.innerHTML = `<td colspan="3">No outstanding balances</td>`;
                     tbody.appendChild(row);
                 }
+        // persist current totals as they reflect balances
+        saveState();
             }
+
+      // Initialize: load persisted state and populate UI
+      document.addEventListener('DOMContentLoaded', () => {
+        loadState();
+        rebuildEntriesTable();
+        updateTotalsTable();
+      });
         </script>
     </div>
 </body>

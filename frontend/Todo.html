@@ -54,30 +54,41 @@
     }
 
     /* ===== Flat gradient menu bar (no circles) ===== */
-   ul.navigation{
-      list-style:none; margin:0;
+    ul.navigation {
+      list-style: none;
+      margin: 0;
       font-family: 'DynaPuff', sans-serif;
       letter-spacing: 0.18em;
-      display:flex; justify-content:center; gap:10px;
-      padding:12px;
-      position:sticky; top:0; z-index:6;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 6;
       background: linear-gradient(180deg, rgba(110, 101, 181, 0.6), rgba(80, 72, 140, 0.6));
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      border-bottom:1px solid rgba(255,255,255,0.15);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     }
-    ul.navigation li{ display:inline-block }
-    ul.navigation a{
-      text-decoration:none; color:#f3f3f3;
-      padding:8px 14px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-      border:1px solid rgba(110, 101, 181, 0.1);
+
+    ul.navigation li {
+      display: inline-block
+    }
+
+    ul.navigation a {
+      text-decoration: none;
+      color: #f3f3f3;
+      padding: 8px 14px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+      border: 1px solid rgba(110, 101, 181, 0.1);
       box-shadow: inset 0 1px 0 rgba(213, 177, 85, 0.2);
       transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
     }
-    ul.navigation a:hover{
-      transform:translateY(-1px);
-      background: linear-gradient(180deg, rgba(110, 101, 181,0.15), rgba(110, 101, 181,0.05));
+
+    ul.navigation a:hover {
+      transform: translateY(-1px);
+      background: linear-gradient(180deg, rgba(110, 101, 181, 0.15), rgba(110, 101, 181, 0.05));
       box-shadow: 0 8px 18px rgba(193, 192, 199, 0.5);
     }
 
@@ -288,25 +299,21 @@
       transform: translateY(-1px)
     }
 
-    /* Checklist list styles */
-    #eventChecklist {
-      width: min(92vw, 760px);
-      margin: 6px auto 50px;
-      text-align: left;
-      color: #101521;
+    .event {
+      font-size: .82em;
+      background: var(--badge);
+      padding: 4px 6px;
+      border-radius: 8px;
+      margin: 4px 0;
     }
 
-    #eventChecklist li {
-      background: var(--card);
-      padding: 10px 12px;
-      border-radius: 10px;
-      margin: 8px 0;
-      list-style: none;
-      border: 1px solid #e6ebf5;
-    }
-
-    /* completed event appearance in calendar */
+    /* completed states */
     .event.event-completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .check-completed {
       text-decoration: line-through;
       opacity: 0.6;
     }
@@ -362,70 +369,56 @@
   <script>
     let events = {};
     let currentDate = new Date();
-    // client-side set of task IDs hidden by checklist (checked but not permanently deleted)
     let hiddenTasks = new Set(JSON.parse(localStorage.getItem('hiddenTasks') || '[]'));
 
     function saveHiddenTasks() {
-      localStorage.setItem('hiddenTasks', JSON.stringify(Array.from(hiddenTasks)));
+      localStorage.setItem('hiddenTasks', JSON.stringify([...hiddenTasks]));
     }
 
-    //returns collected data from backend and updates calendar
     async function loadEvents() {
       const res = await fetch("/api/summary");
       const data = await res.json();
       events = {};
-
-      //groups tasks by due date
       data.summary.forEach(task => {
+        const key = `${task.name}|${task.description}|${task.due_date}`;
         if (!events[task.due_date]) events[task.due_date] = [];
-        events[task.due_date].push({ text: `${task.name}: ${task.description}`, id: task.id });
+        events[task.due_date].push({ user_name: task.name, text: task.description, key });
       });
       generateCalendar(currentDate);
     }
 
-    //returns and formats all tasks into a checklist under add to-do
-    // Checking the checkbox hides the task in calendar (client-side) and is reversible.
-    // The Delete button permanently removes the task via backend.
     async function loadChecklist() {
       const res = await fetch("/api/summary");
       const data = await res.json();
       const list = document.getElementById("dataList");
       list.innerHTML = "";
-      data.summary.forEach(task => {
-        const li = document.createElement("li");
 
+      data.summary.forEach(task => {
+        const key = `${task.name}|${task.description}|${task.due_date}`;
+        const li = document.createElement("li");
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
-        checkbox.id = `task-${task.id}`;
-        checkbox.style.marginRight = '8px';
-        checkbox.checked = hiddenTasks.has(task.id);
+        checkbox.dataset.key = key;
+        checkbox.checked = hiddenTasks.has(key);
 
         const label = document.createElement("label");
-        label.htmlFor = checkbox.id;
         label.textContent = `${task.name}: ${task.description} (due: ${task.due_date})`;
-        label.style.flex = '1';
-        if (hiddenTasks.has(task.id)) label.classList.add('event-completed');
+        if (hiddenTasks.has(key)) label.classList.add("check-completed");
 
-        // Toggle hidden state (client-side) when checkbox changes
-        checkbox.addEventListener('change', () => {
-          if (checkbox.checked) {
-            hiddenTasks.add(task.id);
-            label.classList.add('event-completed');
-          } else {
-            hiddenTasks.delete(task.id);
-            label.classList.remove('event-completed');
-          }
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) hiddenTasks.add(key);
+          else hiddenTasks.delete(key);
           saveHiddenTasks();
-          // regenerate calendar to reflect hidden state
           generateCalendar(currentDate);
+          label.classList.toggle("check-completed", checkbox.checked);
         });
+
         li.appendChild(checkbox);
         li.appendChild(label);
         list.appendChild(li);
       });
     }
 
-    //adds inputted data into backend and reloads the resulting data on calendar and checklist
     async function addEvent(userName, description, date) {
       const userRes = await fetch("/api/user", {
         method: "POST",
@@ -433,85 +426,63 @@
         body: JSON.stringify({ name: userName })
       });
       const user = await userRes.json();
-
-      //adds task
       await fetch("/api/task", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.user_id, description, due_date: date })
       });
-
-      await loadEvents(); //refreshes calendar view
-      await loadChecklist(); //refreshes checklist
+      await loadEvents();
+      await loadChecklist();
     }
 
-    //creates calendar
     function generateCalendar(date) {
       const tbody = document.querySelector("#calendar tbody");
       tbody.innerHTML = "";
+
       const year = date.getFullYear();
       const month = date.getMonth();
-      const firstDay = new Date(year, month).getDay();
+      const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const today = new Date();
 
-      document.getElementById("monthYear").textContent = date.toLocaleString("default", { month: "long", year: "numeric" });
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // normalize time
+
+      document.getElementById("monthYear").textContent =
+        date.toLocaleString("default", { month: "long", year: "numeric" });
 
       let row = document.createElement("tr");
       for (let i = 0; i < firstDay; i++) row.appendChild(document.createElement("td"));
 
       for (let day = 1; day <= daysInMonth; day++) {
         const cell = document.createElement("td");
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const cellDate = new Date(year, month, day);
+        cellDate.setHours(0, 0, 0, 0);
+
         const dayNumber = document.createElement("div");
         dayNumber.textContent = day;
         dayNumber.style.fontWeight = "bold";
         cell.appendChild(dayNumber);
 
-        //highlights today
-        if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
-          cell.classList.add("today");
-        }
+        // Highlight today cell
+        if (cellDate.getTime() === today.getTime()) cell.classList.add("today");
 
-        //add events to given date
-        if (events[dateStr]) {
-          cell.classList.add("has-event");
-          events[dateStr].forEach(ev => {
+        if (events[`${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`]) {
+          events[`${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`].forEach(ev => {
             const evDiv = document.createElement("div");
             evDiv.textContent = ev.text;
             evDiv.classList.add("event");
-            // Determine date state for coloring
-            try {
-              const evDate = new Date(dateStr + 'T00:00:00');
-              // normalize today's date
-              const now = new Date();
-              const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-              if (evDate < todayDate) evDiv.classList.add('past-event');
-              else if (evDate.getTime() === todayDate.getTime()) evDiv.classList.add('today-event');
-              else evDiv.classList.add('future-event');
-            } catch (err) {
-              // fallback: future
-              evDiv.classList.add('future-event');
+
+            // apply color based on date
+            if (cellDate.getTime() < today.getTime()) evDiv.classList.add("past-event");
+            else if (cellDate.getTime() === today.getTime()) evDiv.classList.add("today-event");
+            else evDiv.classList.add("future-event");
+
+            // crossed out if completed
+            if (hiddenTasks.has(ev.key)) {
+              evDiv.style.textDecoration = "line-through";
+              evDiv.style.opacity = 0.6;
             }
-            // If task is marked completed in checklist, give calendar event a completed style
-            if (hiddenTasks.has(ev.id)) evDiv.classList.add('event-completed');
-            //adds delete button for the event inputted in the calendar
-            const delBtn = document.createElement("span");
-            delBtn.textContent = "×";
-            delBtn.classList.add("delete");
-            delBtn.onclick = async (e) => {
-              e.stopPropagation();
-              await fetch(`/api/task/${ev.id}`, { method: "DELETE" });
 
-              // Remove any hidden state for this task if present
-              hiddenTasks.delete(ev.id);
-              saveHiddenTasks();
-
-              // Refresh calendar and checklist
-              await loadEvents();
-              await loadChecklist();
-            };
-            evDiv.appendChild(delBtn);
             cell.appendChild(evDiv);
           });
         }
@@ -536,24 +507,24 @@
         currentDate.setMonth(currentDate.getMonth() + 1);
         generateCalendar(currentDate);
       });
-
       document.getElementById("clearStorage").addEventListener("click", async () => {
-        if (!confirm('Clear all saved events and names? This cannot be undone.')) return;
-        await fetch('/api/tasks', { method: 'DELETE' });
+        await fetch("/api/tasks", { method: "DELETE" });
+        hiddenTasks.clear();
+        saveHiddenTasks();
         await loadEvents();
         await loadChecklist();
       });
-
       document.getElementById("eventForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const userName = document.getElementById("Name").value;
         const date = document.getElementById("eventDate").value;
         const text = document.getElementById("eventText").value;
         await addEvent(userName, text, date);
-        document.getElementById("eventForm").reset();
+        e.target.reset();
       });
     });
   </script>
+
 </body>
 
 </html>
