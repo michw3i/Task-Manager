@@ -28,15 +28,16 @@
     }
   
 
-  html,body{
-    margin:0;
-    padding:0;
+  body{
+    margin:0%;
+    padding: 0%;
     color:var(--ink);
     background:
       radial-gradient(1200px 700px at 50% -10%, #6e65b5 0%, transparent 30%),
-      radial-gradient(900px 500px at 120% 10%, #6ba9bb 0%, transparent 70%),
+      /*radial-gradient(900px 500px at 120% 10%, #6ba9bb 0%, transparent 70%), */
+      
       linear-gradient(180deg, var(--bg-mid), var(--bg-hi) 40%, var(--bg-lo) 100%);
-    min-height:100%;
+    min-height: 200%;
     font-family: 'DynaPuff', sans-serif;
     letter-spacing:.2px;
   }
@@ -71,8 +72,7 @@
   /* Page container */
   #body{
     max-width:1100px;
-    margin:42px auto 80px;
-    padding:0 16px;
+    margin:5% auto 5%;
   }
 
   h1{
@@ -139,13 +139,6 @@
     transform:translateY(-1px);
     box-shadow:0 10px 20px rgba(110, 101, 181,.38);
   }
-  html, body{
-  background:
-    radial-gradient(1200px 700px at 50% -10%, #6e65b5 0%, transparent 30%),
-    radial-gradient(900px 500px at 120% 10%, #6ba9bb 0%, transparent 70%),
-    /* fade to transparent instead of a solid block at 100% */
-    linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-hi) 40%, rgba(110,101,181,0) 100%) !important;
-}
 
   /* Table shells */
   #financialsTableContainer,
@@ -167,6 +160,8 @@
     border:1px solid var(--stroke);
     border-radius:14px;
     background:rgba(175, 213, 199,.02);
+    margin-bottom: 5%;
+    
   }
   table thead th{
     text-align:left;
@@ -183,14 +178,13 @@
     color:var(--ink);
   }
   table tbody tr{ transition:background .15s ease }
-  table tbody tr:hover{ background:rgba(249, 103, 103, 0.06) }
+  table tbody tr:hover{ background:rgba(255, 255, 255, 0.06) }
   /* Right-align money column in both tables */
   #financialsTable td:nth-child(4),
   #financialsTable th:nth-child(4),
   #totalsTable td:nth-child(3),
   #totalsTable th:nth-child(3){
     text-align:right;
-    white-space:nowrap;
   }
 
   /* Empty-state row */
