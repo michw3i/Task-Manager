@@ -33,4 +33,18 @@ We also include a financials page where you can track IOUs between roommates.
 
 ---
 
+## Team Information
+
+- **Michelle Wei** MIW185@pitt.edu
+-**Esther Yoo** EHY10@pitt.edu
+-**Saanvi Srivastava** SAS1440@pitt.edu
+-**Nyla Blitz** NJB151@pitt.edu
+
+
+
+
+
+
+
+
 
